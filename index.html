@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>受付アバター</title>
+  <style>
+    :root { --brand: #1565c0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0d1b2a; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; overflow: hidden; }
+
+    /* 会議（アバター）画面 */
+    #meeting { position: absolute; inset: 0; display: none; }
+    #meeting iframe { width: 100%; height: 100%; border: 0; }
+
+    /* ステータス画面 */
+    #status-screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; text-align: center; padding: 8vw;
+      background: radial-gradient(circle at 50% 30%, #1b4a80 0%, #0d1b2a 70%);
+      transition: background 0.4s;
+    }
+    #badge {
+      display: inline-flex; align-items: center; gap: 0.5em;
+      font-size: clamp(28px, 6vw, 64px); font-weight: 700;
+      padding: 0.4em 1em; border-radius: 999px;
+      background: rgba(255,255,255,0.08); border: 3px solid currentColor;
+    }
+    #badge .dot { width: 0.5em; height: 0.5em; border-radius: 50%; background: currentColor; }
+    #status-msg { margin-top: 1.2em; font-size: clamp(16px, 3.2vw, 30px); line-height: 1.7; opacity: 0.92; max-width: 20em; }
+    #brandline { position: absolute; bottom: 4vh; font-size: clamp(12px, 2vw, 18px); opacity: 0.5; letter-spacing: 0.15em; }
+
+    /* プレビューモード時の「対応中」表示 */
+    #preview-online {
+      position: absolute; inset: 0; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; text-align: center; gap: 1em;
+      background: radial-gradient(circle at 50% 35%, #1565c0 0%, #0d1b2a 75%);
+    }
+    #preview-badge {
+      display: inline-flex; align-items: center; gap: 0.5em;
+      font-size: clamp(24px, 5vw, 52px); font-weight: 700;
+      padding: 0.35em 1em; border-radius: 999px; color: #64b5f6;
+      background: rgba(255,255,255,0.08); border: 3px solid currentColor;
+    }
+    #preview-badge .dot { width: 0.5em; height: 0.5em; border-radius: 50%; background: currentColor; }
+    #preview-online p { font-size: clamp(14px, 2.8vw, 26px); line-height: 1.7; opacity: 0.92; }
+    #preview-online small { opacity: 0.7; }
+
+    /* アバター非表示オーバーレイ（通話は維持したまま姿だけ隠す） */
+    #hidden-overlay {
+      position: absolute; inset: 0; display: none; z-index: 10;
+      flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; text-align: center; gap: 1em;
+      background: radial-gradient(circle at 50% 35%, #1b4a80 0%, #0d1b2a 75%);
+    }
+    #hidden-overlay .title { font-size: clamp(22px, 5vw, 48px); font-weight: 700; }
+    #hidden-overlay p { font-size: clamp(14px, 2.8vw, 26px); opacity: 0.9; }
+
+    /* ミュート中インジケータ（会議表示中に右上へ小さく出す） */
+    #mute-indicator {
+      position: absolute; top: 16px; right: 16px; z-index: 20; display: none;
+      align-items: center; gap: 8px; color: #fff;
+      background: rgba(96,125,139,0.92); padding: 8px 16px; border-radius: 999px;
+      font-size: clamp(12px, 2.2vw, 18px); font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div id="meeting"><!-- Jitsi をここに差し込む --></div>
+
+  <!-- プレビューモード時、会議の代わりに出す「対応中」表示 -->
+  <div id="preview-online">
+    <div id="preview-badge"><span class="dot"></span>対応中</div>
+    <p>アバター会話を表示中<br /><small>（客先には Jitsi 会議が映っています）</small></p>
+  </div>
+
+  <!-- アバター非表示オーバーレイ -->
+  <div id="hidden-overlay">
+    <div class="title">少々お待ちください</div>
+    <p>担当者が対応の準備をしています</p>
+  </div>
+
+  <!-- ミュート中インジケータ（操作側がChromeでマイクをミュートしている旨の表示） -->
+  <div id="mute-indicator">🔇 音声調整中</div>
+
+  <div id="status-screen">
+    <div id="badge"><span class="dot"></span><span id="badge-label">—</span></div>
+    <p id="status-msg"></p>
+    <div id="brandline">NETWORK SUPPORT DESK</div>
+  </div>
+
+  <!-- Firebase（別デバイス間のステータス同期用。config.js に databaseURL があれば有効化） -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="config.js"></script>
+  <script src="status.js"></script>
+  <script>
+    const meetingEl = document.getElementById("meeting");
+    const previewOnlineEl = document.getElementById("preview-online");
+    const hiddenOverlay = document.getElementById("hidden-overlay");
+    const muteIndicator = document.getElementById("mute-indicator");
+    const statusScreen = document.getElementById("status-screen");
+    const badge = document.getElementById("badge");
+    const badgeLabel = document.getElementById("badge-label");
+    const statusMsg = document.getElementById("status-msg");
+    const cfg = window.AVATAR_CONFIG;
+    // ?preview=1 で開くと、会議を実際に読み込まず「対応中」表示にする（管理画面の監視用）
+    const isPreview = new URLSearchParams(location.search).get("preview") === "1";
+    let meetingLoaded = false;
+
+    function buildJitsiUrl() {
+      const j = cfg.jitsi;
+      const hash = [
+        "config.prejoinPageEnabled=false",
+        "config.startWithVideoMuted=false",
+        "userInfo.displayName=" + encodeURIComponent(j.displayName || ""),
+      ].join("&");
+      return `https://${j.domain}/${encodeURIComponent(j.room)}#${hash}`;
+    }
+
+    function loadMeeting() {
+      if (meetingLoaded || isPreview) return;
+      const iframe = document.createElement("iframe");
+      iframe.src = buildJitsiUrl();
+      iframe.allow = "camera; microphone; fullscreen; display-capture; autoplay";
+      meetingEl.appendChild(iframe);
+      meetingLoaded = true;
+    }
+
+    function render(state) {
+      const def = window.STATUS_DEFS[state.status] || window.STATUS_DEFS.away;
+
+      // ミュートインジケータ（会議表示中・非表示でない時のみ）
+      // 実際の消音は操作側 Chrome のマイクで行う。ここは客先への「音声調整中」表示。
+      muteIndicator.style.display = (def.showMeeting && state.muted && !state.hidden) ? "flex" : "none";
+
+      if (def.showMeeting) {
+        statusScreen.style.display = "none";
+
+        // アバター非表示中：通話は維持し、オーバーレイで姿だけ隠す
+        hiddenOverlay.style.display = state.hidden ? "flex" : "none";
+
+        if (isPreview) {
+          meetingEl.style.display = "none";
+          previewOnlineEl.style.display = state.hidden ? "none" : "flex";
+        } else {
+          loadMeeting();
+          meetingEl.style.display = "block";
+          previewOnlineEl.style.display = "none";
+        }
+      } else {
+        // 会議を出さないステータス時
+        meetingEl.style.display = "none";
+        previewOnlineEl.style.display = "none";
+        hiddenOverlay.style.display = "none";
+        statusScreen.style.display = "flex";
+        badge.style.color = def.color;
+        badgeLabel.textContent = def.label;
+        statusMsg.textContent = def.message;
+      }
+    }
+
+    window.StatusStore.subscribe(render);
+  </script>
+</body>
+</html>

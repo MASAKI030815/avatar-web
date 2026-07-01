@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>操作側 管理ページ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: #eef1f4; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      color: #1a2733; display: flex; flex-direction: column;
+      padding: 20px 28px; overflow: hidden;
+    }
+
+    /* ヘッダー（1行にまとめる） */
+    header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    header h1 { font-size: 20px; }
+    header .mode { font-size: 12px; color: #8a99a8; }
+    header .current { margin-left: auto; font-size: 14px; }
+    header .current b { font-size: 20px; }
+
+    /* 2カラム本体（残り高さいっぱい） */
+    .layout { flex: 1; display: flex; gap: 28px; min-height: 0; }
+    .controls { width: 440px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
+    .preview-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+    .section-label { font-size: 12px; color: #6b7a88; font-weight: 700; letter-spacing: 0.04em; }
+
+    /* ステータス4種 */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    button.status-btn {
+      appearance: none; border: 2px solid transparent; border-radius: 12px;
+      padding: 18px 14px; font-size: 18px; font-weight: 700; color: #fff;
+      cursor: pointer; transition: transform 0.08s, box-shadow 0.15s; text-align: left;
+    }
+    button.status-btn small { display: block; font-size: 11px; font-weight: 400; opacity: 0.9; margin-top: 4px; line-height: 1.4; }
+    button.status-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+    button.status-btn.active { outline: 4px solid #1a2733; outline-offset: 2px; }
+
+    /* トグル（ミュート / アバター非表示） */
+    .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    button.toggle-btn {
+      appearance: none; border: 2px solid #cfd8e0; border-radius: 12px;
+      padding: 16px 14px; font-size: 16px; font-weight: 700; color: #37474f; background: #fff;
+      cursor: pointer; transition: transform 0.08s, box-shadow 0.15s; text-align: left;
+    }
+    button.toggle-btn small { display: block; font-size: 11px; font-weight: 400; color: #8a99a8; margin-top: 4px; }
+    button.toggle-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+    button.toggle-btn.on { background: #607d8b; color: #fff; border-color: #607d8b; }
+    button.toggle-btn.on small { color: rgba(255,255,255,0.85); }
+    button.toggle-btn.on.hide-on { background: #455a64; border-color: #455a64; }
+
+    .hint { font-size: 11px; color: #8a99a8; line-height: 1.6; background: #fff; border-radius: 10px; padding: 12px 14px; }
+    .hint code { background: #eef1f4; padding: 1px 5px; border-radius: 4px; }
+
+    /* 客先画面ライブプレビュー（右カラムいっぱい） */
+    .preview-col h2 { font-size: 13px; color: #6b7a88; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .preview-col h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #e53935; animation: blink 1.4s infinite; }
+    @keyframes blink { 50% { opacity: 0.25; } }
+    .device {
+      position: relative; flex: 1; min-height: 0;
+      border: 8px solid #1a2733; border-radius: 16px; overflow: hidden;
+      background: #0d1b2a; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    /* 客先ページ(1280x800)を実寸で描画し、枠内に収まるよう縮小して中央配置 */
+    .device iframe {
+      position: absolute; top: 50%; left: 50%;
+      width: 1280px; height: 800px; border: 0;
+      transform-origin: center center;
+    }
+    .caption { font-size: 11px; color: #a4b1bd; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>受付アバター 管理ページ</h1>
+    <span class="mode" id="mode"></span>
+    <span class="current">現在：<b id="current-label">—</b></span>
+  </header>
+
+  <div class="layout">
+    <div class="controls">
+      <div>
+        <div class="section-label">ステータス</div>
+        <div class="grid" id="buttons" style="margin-top:8px;"></div>
+      </div>
+      <div>
+        <div class="section-label">一時操作</div>
+        <div class="toggles" style="margin-top:8px;">
+          <button class="toggle-btn" id="btn-mute">🔇 ミュート<small>OFF</small></button>
+          <button class="toggle-btn" id="btn-hide">🚫 アバター非表示<small>OFF</small></button>
+        </div>
+      </div>
+      <div class="hint">
+        ※ <b>ミュートの実際の消音は操作側の Chrome（会議参加中のマイク）で行ってください。</b>
+        このボタンは客先画面に「音声調整中」を表示し、状態を共有するためのものです。<br />
+        ※「アバター非表示」は通話を維持したまま姿だけ隠します。<br />
+        ※「対応中」で客先に Jitsi 会議（<span id="room"></span>）が表示されます。
+        操作側もこの会議に VSeeFace カメラで参加してください。
+      </div>
+    </div>
+
+    <div class="preview-col">
+      <h2>客先画面プレビュー（リアルタイム）</h2>
+      <div class="device">
+        <iframe id="preview" src="index.html?preview=1" title="客先画面プレビュー"></iframe>
+      </div>
+      <p class="caption">客先タブレットに今表示されている画面です（会議部分は監視用にプレースホルダ表示）。</p>
+    </div>
+  </div>
+
+  <!-- Firebase（別デバイス間のステータス同期用。config.js に databaseURL があれば有効化） -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="config.js"></script>
+  <script src="status.js"></script>
+  <script>
+    const grid = document.getElementById("buttons");
+    const currentLabel = document.getElementById("current-label");
+    const modeEl = document.getElementById("mode");
+    document.getElementById("room").textContent = window.AVATAR_CONFIG.jitsi.room;
+
+    modeEl.textContent = window.StatusStore.mode === "firebase"
+      ? "同期：Firebase（別デバイスOK）"
+      : "同期：ローカル（同一ブラウザのタブのみ・デモ用）";
+
+    const order = ["online", "away", "busy", "closed"];
+    const btns = {};
+    order.forEach((key) => {
+      const def = window.STATUS_DEFS[key];
+      const b = document.createElement("button");
+      b.className = "status-btn";
+      b.style.background = def.color;
+      b.innerHTML = `${def.label}<small>${def.message}</small>`;
+      b.onclick = () => window.StatusStore.set({ status: key });
+      grid.appendChild(b);
+      btns[key] = b;
+    });
+
+    const muteBtn = document.getElementById("btn-mute");
+    const hideBtn = document.getElementById("btn-hide");
+    let state = window.DEFAULT_STATE;
+    muteBtn.onclick = () => window.StatusStore.set({ muted: !state.muted });
+    hideBtn.onclick = () => window.StatusStore.set({ hidden: !state.hidden });
+
+    window.StatusStore.subscribe((s) => {
+      state = s;
+      const def = window.STATUS_DEFS[s.status] || window.STATUS_DEFS.away;
+      currentLabel.textContent = def.label
+        + (s.muted ? "・ミュート中" : "")
+        + (s.hidden ? "・非表示中" : "");
+      Object.entries(btns).forEach(([k, b]) => b.classList.toggle("active", k === s.status));
+
+      muteBtn.classList.toggle("on", s.muted);
+      muteBtn.querySelector("small").textContent = s.muted ? "ON（音声調整中を表示）" : "OFF";
+      hideBtn.classList.toggle("on", s.hidden);
+      hideBtn.classList.toggle("hide-on", s.hidden);
+      hideBtn.querySelector("small").textContent = s.hidden ? "ON（姿を隠す）" : "OFF";
+    });
+
+    // プレビューiframe(1280x800)を枠内に収まるよう縮小・中央配置
+    const preview = document.getElementById("preview");
+    function fitPreview() {
+      const box = preview.parentElement;
+      const scale = Math.min(box.clientWidth / 1280, box.clientHeight / 800);
+      preview.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+    }
+    window.addEventListener("resize", fitPreview);
+    fitPreview();
+  </script>
+</body>
+</html>
