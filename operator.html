@@ -109,7 +109,8 @@
       if (!api) return;
       api.isAudioMuted().then((m) => { if (m !== muted) api.executeCommand("toggleAudio"); }).catch(() => {});
     }
-    window.StatusStore.subscribe((s) => { currentMuted = !!s.muted; applyMute(currentMuted); });
+    // 対応中(online)以外、または管理画面のミュートON時は、操作側マイクを実際にOFF
+    window.StatusStore.subscribe((s) => { currentMuted = (!!s.muted) || s.status !== "online"; applyMute(currentMuted); });
 
     // 保存済みの合言葉があれば自動接続
     const saved = localStorage.getItem("avatar-operator-key");

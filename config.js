@@ -9,7 +9,7 @@ window.AVATAR_CONFIG = {
     appId: "vpaas-magic-cookie-3a518f0ee8eb425ca08cd293ecd138da",
     kid: "vpaas-magic-cookie-3a518f0ee8eb425ca08cd293ecd138da/29a467",
     room: "yamada-avatar-desk-01",  // 実際の会議名は `${appId}/${room}` になる
-    displayName: "山田（ネットワークエンジニア）",
+    displayName: "MASAKI",
     // JWT を発行する Cloudflare Worker の URL
     tokenEndpoint: "https://jaas-token.masaki030815.workers.dev/token",
   },

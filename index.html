@@ -142,6 +142,13 @@
         if (op) jitsiApi.setLargeVideoParticipant(op.participantId);
       } catch (e) {}
       updateWaiting();
+      applyCustomerAudio();
+    }
+    function applyCustomerAudio() {
+      if (!jitsiApi) return;
+      // 対応中(online)以外は客先マイクを実際にOFF（相手側も同様にOFFのため双方向とも無音）
+      const wantMute = state.status !== "online";
+      jitsiApi.isAudioMuted().then((m) => { if (m !== wantMute) jitsiApi.executeCommand("toggleAudio"); }).catch(() => {});
     }
     let meetingStarting = false;
     async function ensureMeeting() {
@@ -213,6 +220,7 @@
       gate.style.display = "none";
       ensureMeeting();
       meetingEl.style.display = "block";
+      applyCustomerAudio();
 
       if (def.showMeeting) {
         // 対応中：アバターを表示（非表示中はオーバーレイ／担当者未参加は接続中表示）
