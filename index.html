@@ -113,6 +113,14 @@
     // 接続を登録（新規はpending、永続許可済みは自動approved）
     window.ConnStore.registerSelf(deviceId, { name: defaultName, ua: (navigator.userAgent || "").slice(0, 140) });
 
+    function pinOperator() {
+      if (!jitsiApi) return;
+      try {
+        const parts = jitsiApi.getParticipantsInfo() || [];
+        const op = parts.find((p) => p.displayName === cfg.jitsi.displayName);
+        if (op) jitsiApi.setLargeVideoParticipant(op.participantId);
+      } catch (e) {}
+    }
     function ensureMeeting() {
       if (jitsiApi) return;
       jitsiApi = new JitsiMeetExternalAPI(cfg.jitsi.domain, {
@@ -121,12 +129,18 @@
         userInfo: { displayName: cfg.jitsi.displayName || "" },
         configOverwrite: {
           prejoinPageEnabled: false,
+          prejoinConfig: { enabled: false },   // 新しい Jitsi ではこちらで参加画面を無効化
           disableDeepLinking: true,
           disableInviteFunctions: true,
           startWithVideoMuted: false,
+          filmstrip: { disabled: true },   // サムネイル非表示（監視参加を目立たせない）
         },
         interfaceConfigOverwrite: { TOOLBAR_BUTTONS: [] },
       });
+      // 操作側（アバター）を常に主表示に固定
+      jitsiApi.addEventListener("videoConferenceJoined", pinOperator);
+      jitsiApi.addEventListener("participantJoined", pinOperator);
+      jitsiApi.addEventListener("dominantSpeakerChanged", pinOperator);
     }
     function disposeMeeting() {
       if (jitsiApi) { try { jitsiApi.dispose(); } catch (e) {} jitsiApi = null; meetingEl.innerHTML = ""; }

@@ -84,6 +84,9 @@
     #pv-msg { font-size: clamp(12px, 1.8vw, 20px); opacity: 0.9; }
     #pv-mute { position: absolute; top: 12px; right: 12px; display: none; align-items: center; gap: 6px; color: #fff; background: rgba(96,125,139,0.92); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; }
     .caption { font-size: 11px; color: #a4b1bd; margin-top: 6px; }
+    #monitor { position: absolute; inset: 0; }
+    #monitor iframe { width: 100%; height: 100%; border: 0; }
+    #mon-idle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8fa3b5; font-size: 14px; text-align: center; padding: 6%; }
   </style>
 </head>
 <body>
@@ -114,7 +117,15 @@
 
     <div class="right">
       <div class="preview-wrap">
-        <h2>客先画面プレビュー（対応中は実アバター映像）</h2>
+        <h2>客先カメラ（会議モニター）</h2>
+        <div class="device">
+          <div id="monitor"></div>
+          <div id="mon-idle">対応中になると客先カメラを表示します</div>
+        </div>
+        <p class="caption">会議に監視参加（カメラ・マイク・音声OFF）して客先カメラを受信表示します。</p>
+      </div>
+      <div class="preview-wrap">
+        <h2>客先ディスプレイ（対応中は実アバター映像）</h2>
         <div class="device">
           <video id="vcam" autoplay muted playsinline></video>
           <div id="pv-card">
@@ -128,12 +139,14 @@
     </div>
   </div>
 
+  <script src="https://meet.jit.si/external_api.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="config.js"></script>
   <script src="status.js"></script>
   <script>
     const currentLabel = document.getElementById("current-label");
+    const cfg = window.AVATAR_CONFIG;
     document.getElementById("mode").textContent = window.AVATAR_USE_FIREBASE
       ? "同期：Firebase（別デバイスOK）" : "同期：ローカル（同一ブラウザのタブのみ・デモ用）";
 
@@ -185,6 +198,42 @@
       if (vcamStream) { vcamStream.getTracks().forEach((t) => t.stop()); vcamStream = null; vcamVideo.srcObject = null; }
     }
 
+    // ---- 客先カメラ（会議モニター：カメラ/マイク/音声OFFで監視参加）----
+    const monitorEl = document.getElementById("monitor");
+    const monIdle = document.getElementById("mon-idle");
+    let monitorApi = null;
+    function pinCustomer() {
+      if (!monitorApi) return;
+      try {
+        const parts = monitorApi.getParticipantsInfo() || [];
+        const cust = parts.find((p) => p.displayName && p.displayName !== cfg.jitsi.displayName && !/監視/.test(p.displayName));
+        if (cust) monitorApi.setLargeVideoParticipant(cust.participantId);
+      } catch (e) {}
+    }
+    function startMonitor() {
+      if (monitorApi) return;
+      monIdle.style.display = "none";
+      monitorApi = new JitsiMeetExternalAPI(cfg.jitsi.domain, {
+        roomName: cfg.jitsi.room,
+        parentNode: monitorEl,
+        userInfo: { displayName: "（監視）" },
+        configOverwrite: {
+          prejoinPageEnabled: false,
+          prejoinConfig: { enabled: false },
+          startSilent: true,          // 音声の送受信なし（エコー防止）
+          startWithVideoMuted: true,  // カメラ送信なし
+          disableDeepLinking: true,
+          filmstrip: { disabled: true },
+        },
+        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: [] },
+      });
+      monitorApi.addEventListener("videoConferenceJoined", pinCustomer);
+      monitorApi.addEventListener("participantJoined", pinCustomer);
+    }
+    function stopMonitor() {
+      if (monitorApi) { try { monitorApi.dispose(); } catch (e) {} monitorApi = null; monitorEl.innerHTML = ""; monIdle.style.display = "flex"; }
+    }
+
     function renderPreview() {
       const def = window.STATUS_DEFS[state.status] || window.STATUS_DEFS.away;
       if (def.showMeeting && !state.hidden) {
@@ -213,6 +262,7 @@
       hideBtn.classList.toggle("hide-on", s.hidden);
       hideBtn.querySelector("small").textContent = s.hidden ? "ON（姿を隠す）" : "OFF";
       renderPreview();
+      if (s.status === "online") startMonitor(); else stopMonitor();
     });
 
     // ---- 接続承認パネル ----
