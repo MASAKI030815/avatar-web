@@ -85,6 +85,8 @@
             startWithVideoMuted: false,
           },
         });
+        // 管理画面のミュート状態に合わせて、実際に自分（操作側）のマイクをミュート/解除
+        api.addEventListener("videoConferenceJoined", () => applyMute(currentMuted));
       } catch (e) {
         err.textContent = "接続に失敗しました：" + (e.message || e);
       }
@@ -100,6 +102,14 @@
       if (api) { try { api.dispose(); } catch (e) {} api = null; meetEl.innerHTML = ""; }
       topbar.style.display = "none"; setup.style.display = "flex"; keyInput.value = ""; err.textContent = "";
     };
+
+    // 管理画面のミュート状態に連動して、実際にマイクをミュート/解除する
+    let currentMuted = false;
+    function applyMute(muted) {
+      if (!api) return;
+      api.isAudioMuted().then((m) => { if (m !== muted) api.executeCommand("toggleAudio"); }).catch(() => {});
+    }
+    window.StatusStore.subscribe((s) => { currentMuted = !!s.muted; applyMute(currentMuted); });
 
     // 保存済みの合言葉があれば自動接続
     const saved = localStorage.getItem("avatar-operator-key");

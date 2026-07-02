@@ -265,7 +265,7 @@
       currentLabel.textContent = def.label + (s.muted ? "・ミュート中" : "") + (s.hidden ? "・非表示中" : "");
       Object.entries(btns).forEach(([k, b]) => b.classList.toggle("active", k === s.status));
       muteBtn.classList.toggle("on", s.muted);
-      muteBtn.querySelector("small").textContent = s.muted ? "ON（音声調整中を表示）" : "OFF";
+      muteBtn.querySelector("small").textContent = s.muted ? "ON（操作側マイク消音中）" : "OFF";
       hideBtn.classList.toggle("on", s.hidden);
       hideBtn.classList.toggle("hide-on", s.hidden);
       hideBtn.querySelector("small").textContent = s.hidden ? "ON（姿を隠す）" : "OFF";
