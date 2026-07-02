@@ -146,12 +146,6 @@
       if (jitsiApi) { try { jitsiApi.dispose(); } catch (e) {} jitsiApi = null; meetingEl.innerHTML = ""; }
     }
 
-    function showOnly(el) {
-      [meetingEl, gate, statusScreen, hiddenOverlay].forEach((n) => {
-        n.style.display = (n === el) ? (n === meetingEl ? "block" : "flex") : "none";
-      });
-    }
-
     function render() {
       const approved = conn && conn.approval === "approved";
       const rejected = conn && conn.approval === "rejected";
@@ -160,8 +154,11 @@
       // 未承認：承認/待機画面（会議には絶対つながない）
       if (!approved) {
         disposeMeeting();
+        meetingEl.style.display = "none";
+        statusScreen.style.display = "none";
+        hiddenOverlay.style.display = "none";
         muteIndicator.style.display = "none";
-        showOnly(gate);
+        gate.style.display = "flex";
         if (rejected) {
           gateBadge.style.color = "#e57373";
           gateLabel.textContent = "接続が許可されていません";
@@ -176,19 +173,24 @@
         return;
       }
 
-      // 承認済み
+      // 承認されたら即座に会議へ参加し、接続を維持する
+      gate.style.display = "none";
+      ensureMeeting();
+      meetingEl.style.display = "block";
+
       if (def.showMeeting) {
-        ensureMeeting();
+        // 対応中：アバターを表示（非表示中はオーバーレイ）
+        statusScreen.style.display = "none";
+        hiddenOverlay.style.display = state.hidden ? "flex" : "none";
         muteIndicator.style.display = (state.muted && !state.hidden) ? "flex" : "none";
-        if (state.hidden) { showOnly(hiddenOverlay); }
-        else { showOnly(meetingEl); }
       } else {
-        disposeMeeting();
+        // 離席/他件/業務終了：接続は維持したまま、客先にはステータス画面を表示
+        hiddenOverlay.style.display = "none";
         muteIndicator.style.display = "none";
-        showOnly(statusScreen);
         badge.style.color = def.color;
         badgeLabel.textContent = def.label;
         statusMsg.textContent = def.message;
+        statusScreen.style.display = "flex";
       }
     }
 
