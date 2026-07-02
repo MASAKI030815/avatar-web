@@ -113,6 +113,7 @@
     const waitingEl = document.getElementById("waiting");
     const muteIndicator = document.getElementById("mute-indicator");
     let operatorPresent = false;
+    let opPoll = null;
 
     const deviceId = window.getDeviceId();
     const defaultName = "端末-" + deviceId.replace(/^dev-/, "");
@@ -135,7 +136,8 @@
       if (!jitsiApi) { operatorPresent = false; updateWaiting(); return; }
       try {
         const parts = jitsiApi.getParticipantsInfo() || [];
-        const op = parts.find((p) => p.displayName === cfg.jitsi.displayName);
+        // 「（監視）」と自分以外の参加者＝操作側（アバター）とみなす（名前一致に依存しない）
+        const op = parts.find((p) => p.displayName && p.displayName !== "（監視）" && p.displayName !== defaultName);
         operatorPresent = !!op;
         if (op) jitsiApi.setLargeVideoParticipant(op.participantId);
       } catch (e) {}
@@ -167,6 +169,7 @@
         jitsiApi.addEventListener("participantLeft", refreshOperator);
         jitsiApi.addEventListener("displayNameChange", refreshOperator);
         jitsiApi.addEventListener("dominantSpeakerChanged", refreshOperator);
+        if (!opPoll) opPoll = setInterval(refreshOperator, 3000);
       } catch (e) {
         jitsiApi = null;
       }
@@ -174,6 +177,7 @@
     }
     function disposeMeeting() {
       if (jitsiApi) { try { jitsiApi.dispose(); } catch (e) {} jitsiApi = null; meetingEl.innerHTML = ""; }
+      if (opPoll) { clearInterval(opPoll); opPoll = null; }
       operatorPresent = false; waitingEl.style.display = "none";
     }
 
