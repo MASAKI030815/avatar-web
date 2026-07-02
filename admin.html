@@ -9,66 +9,80 @@
     html, body { height: 100%; }
     body {
       background: #eef1f4; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-      color: #1a2733; display: flex; flex-direction: column;
-      padding: 20px 28px; overflow: hidden;
+      color: #1a2733; display: flex; flex-direction: column; padding: 16px 22px; overflow: hidden;
     }
-
-    /* ヘッダー（1行にまとめる） */
-    header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-    header h1 { font-size: 20px; }
+    header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+    header h1 { font-size: 19px; }
     header .mode { font-size: 12px; color: #8a99a8; }
     header .current { margin-left: auto; font-size: 14px; }
-    header .current b { font-size: 20px; }
+    header .current b { font-size: 19px; }
 
-    /* 2カラム本体（残り高さいっぱい） */
-    .layout { flex: 1; display: flex; gap: 28px; min-height: 0; }
-    .controls { width: 440px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
-    .preview-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .layout { flex: 1; display: flex; gap: 20px; min-height: 0; }
+    .controls { width: 400px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+    .right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 
-    .section-label { font-size: 12px; color: #6b7a88; font-weight: 700; letter-spacing: 0.04em; }
+    .section-label { font-size: 12px; color: #6b7a88; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 6px; }
 
-    /* ステータス4種 */
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     button.status-btn {
       appearance: none; border: 2px solid transparent; border-radius: 12px;
-      padding: 18px 14px; font-size: 18px; font-weight: 700; color: #fff;
-      cursor: pointer; transition: transform 0.08s, box-shadow 0.15s; text-align: left;
+      padding: 14px 12px; font-size: 17px; font-weight: 700; color: #fff; cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.15s; text-align: left;
     }
-    button.status-btn small { display: block; font-size: 11px; font-weight: 400; opacity: 0.9; margin-top: 4px; line-height: 1.4; }
+    button.status-btn small { display: block; font-size: 11px; font-weight: 400; opacity: 0.9; margin-top: 3px; line-height: 1.4; }
     button.status-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
     button.status-btn.active { outline: 4px solid #1a2733; outline-offset: 2px; }
 
-    /* トグル（ミュート / アバター非表示） */
-    .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     button.toggle-btn {
       appearance: none; border: 2px solid #cfd8e0; border-radius: 12px;
-      padding: 16px 14px; font-size: 16px; font-weight: 700; color: #37474f; background: #fff;
-      cursor: pointer; transition: transform 0.08s, box-shadow 0.15s; text-align: left;
+      padding: 12px; font-size: 15px; font-weight: 700; color: #37474f; background: #fff; cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.15s; text-align: left;
     }
-    button.toggle-btn small { display: block; font-size: 11px; font-weight: 400; color: #8a99a8; margin-top: 4px; }
+    button.toggle-btn small { display: block; font-size: 11px; font-weight: 400; color: #8a99a8; margin-top: 3px; }
     button.toggle-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
     button.toggle-btn.on { background: #607d8b; color: #fff; border-color: #607d8b; }
     button.toggle-btn.on small { color: rgba(255,255,255,0.85); }
     button.toggle-btn.on.hide-on { background: #455a64; border-color: #455a64; }
 
-    .hint { font-size: 11px; color: #8a99a8; line-height: 1.6; background: #fff; border-radius: 10px; padding: 12px 14px; }
-    .hint code { background: #eef1f4; padding: 1px 5px; border-radius: 4px; }
+    .hint { font-size: 11px; color: #8a99a8; line-height: 1.6; background: #fff; border-radius: 10px; padding: 10px 12px; }
 
-    /* 客先画面ライブプレビュー（右カラムいっぱい） */
-    .preview-col h2 { font-size: 13px; color: #6b7a88; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-    .preview-col h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #e53935; animation: blink 1.4s infinite; }
+    /* 接続承認パネル */
+    .conns { background: #fff; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; min-height: 0; flex: 1; }
+    .conns h2 { font-size: 13px; color: #37474f; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .conns .pending-badge { background: #e53935; color: #fff; font-size: 11px; padding: 1px 8px; border-radius: 999px; }
+    .conn-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .conn-row { border: 1px solid #e3e8ed; border-radius: 10px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .conn-row.pending { border-color: #f0b400; background: #fff8e5; }
+    .conn-row .name { flex: 1; min-width: 120px; border: 1px solid #d6dee6; border-radius: 6px; padding: 5px 8px; font-size: 13px; }
+    .conn-row .id { font-size: 10px; color: #a4b1bd; width: 100%; }
+    .conn-row .st { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .st.pending { background: #ffe6a0; color: #7a5b00; }
+    .st.approved { background: #cdeccd; color: #1c5b1c; }
+    .st.rejected { background: #f2c9c9; color: #7a1c1c; }
+    .conn-row button { appearance: none; border: 0; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .btn-ok { background: #2e7d32; color: #fff; }
+    .btn-no { background: #b0bec5; color: #263238; }
+    .btn-del { background: #eceff1; color: #90a4ae; }
+    .perm { font-size: 11px; color: #37474f; display: inline-flex; align-items: center; gap: 4px; }
+    .empty { font-size: 12px; color: #a4b1bd; padding: 8px; }
+
+    /* プレビュー（VCam 実映像 / ステータスカード） */
+    .preview-wrap { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+    .preview-wrap h2 { font-size: 13px; color: #6b7a88; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .preview-wrap h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #e53935; animation: blink 1.4s infinite; }
     @keyframes blink { 50% { opacity: 0.25; } }
-    .device {
-      position: relative; flex: 1; min-height: 0;
-      border: 8px solid #1a2733; border-radius: 16px; overflow: hidden;
-      background: #0d1b2a; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    .device { position: relative; flex: 1; min-height: 0; border: 8px solid #1a2733; border-radius: 16px; overflow: hidden; background: #0d1b2a; }
+    #vcam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; background: #0d1b2a; }
+    #pv-card {
+      position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; text-align: center; gap: 12px; padding: 6%;
+      background: radial-gradient(circle at 50% 32%, #1b4a80 0%, #0d1b2a 72%);
     }
-    /* 客先ページ(1280x800)を実寸で描画し、枠内に収まるよう縮小して中央配置 */
-    .device iframe {
-      position: absolute; top: 50%; left: 50%;
-      width: 1280px; height: 800px; border: 0;
-      transform-origin: center center;
-    }
+    #pv-badge { display: inline-flex; align-items: center; gap: 0.5em; font-size: clamp(20px, 3.4vw, 40px); font-weight: 700; padding: 0.35em 1em; border-radius: 999px; background: rgba(255,255,255,0.08); border: 3px solid currentColor; }
+    #pv-badge .dot { width: 0.5em; height: 0.5em; border-radius: 50%; background: currentColor; }
+    #pv-msg { font-size: clamp(12px, 1.8vw, 20px); opacity: 0.9; }
+    #pv-mute { position: absolute; top: 12px; right: 12px; display: none; align-items: center; gap: 6px; color: #fff; background: rgba(96,125,139,0.92); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; }
     .caption { font-size: 11px; color: #a4b1bd; margin-top: 6px; }
   </style>
 </head>
@@ -83,91 +97,164 @@
     <div class="controls">
       <div>
         <div class="section-label">ステータス</div>
-        <div class="grid" id="buttons" style="margin-top:8px;"></div>
+        <div class="grid" id="buttons"></div>
       </div>
       <div>
         <div class="section-label">一時操作</div>
-        <div class="toggles" style="margin-top:8px;">
+        <div class="toggles">
           <button class="toggle-btn" id="btn-mute">🔇 ミュート<small>OFF</small></button>
           <button class="toggle-btn" id="btn-hide">🚫 アバター非表示<small>OFF</small></button>
         </div>
       </div>
-      <div class="hint">
-        ※ <b>ミュートの実際の消音は操作側の Chrome（会議参加中のマイク）で行ってください。</b>
-        このボタンは客先画面に「音声調整中」を表示し、状態を共有するためのものです。<br />
-        ※「アバター非表示」は通話を維持したまま姿だけ隠します。<br />
-        ※「対応中」で客先に Jitsi 会議（<span id="room"></span>）が表示されます。
-        操作側もこの会議に VSeeFace カメラで参加してください。
+      <div class="conns">
+        <h2>接続承認 <span class="pending-badge" id="pending-badge" style="display:none">0</span></h2>
+        <div class="conn-list" id="conn-list"><div class="empty">接続中の端末はありません</div></div>
       </div>
     </div>
 
-    <div class="preview-col">
-      <h2>客先画面プレビュー（リアルタイム）</h2>
-      <div class="device">
-        <iframe id="preview" src="index.html?preview=1" title="客先画面プレビュー"></iframe>
+    <div class="right">
+      <div class="preview-wrap">
+        <h2>客先画面プレビュー（対応中は実アバター映像）</h2>
+        <div class="device">
+          <video id="vcam" autoplay muted playsinline></video>
+          <div id="pv-card">
+            <div id="pv-badge"><span class="dot"></span><span id="pv-label">—</span></div>
+            <p id="pv-msg"></p>
+          </div>
+          <div id="pv-mute">🔇 音声調整中</div>
+        </div>
+        <p class="caption" id="pv-caption">「対応中」で操作側 VCam の実映像を表示（会議には二重参加しません）。</p>
       </div>
-      <p class="caption">客先タブレットに今表示されている画面です（会議部分は監視用にプレースホルダ表示）。</p>
     </div>
   </div>
 
-  <!-- Firebase（別デバイス間のステータス同期用。config.js に databaseURL があれば有効化） -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="config.js"></script>
   <script src="status.js"></script>
   <script>
-    const grid = document.getElementById("buttons");
     const currentLabel = document.getElementById("current-label");
-    const modeEl = document.getElementById("mode");
-    document.getElementById("room").textContent = window.AVATAR_CONFIG.jitsi.room;
+    document.getElementById("mode").textContent = window.AVATAR_USE_FIREBASE
+      ? "同期：Firebase（別デバイスOK）" : "同期：ローカル（同一ブラウザのタブのみ・デモ用）";
 
-    modeEl.textContent = window.StatusStore.mode === "firebase"
-      ? "同期：Firebase（別デバイスOK）"
-      : "同期：ローカル（同一ブラウザのタブのみ・デモ用）";
-
+    // ---- ステータスボタン ----
+    const grid = document.getElementById("buttons");
     const order = ["online", "away", "busy", "closed"];
     const btns = {};
     order.forEach((key) => {
       const def = window.STATUS_DEFS[key];
       const b = document.createElement("button");
-      b.className = "status-btn";
-      b.style.background = def.color;
+      b.className = "status-btn"; b.style.background = def.color;
       b.innerHTML = `${def.label}<small>${def.message}</small>`;
       b.onclick = () => window.StatusStore.set({ status: key });
-      grid.appendChild(b);
-      btns[key] = b;
+      grid.appendChild(b); btns[key] = b;
     });
-
     const muteBtn = document.getElementById("btn-mute");
     const hideBtn = document.getElementById("btn-hide");
     let state = window.DEFAULT_STATE;
     muteBtn.onclick = () => window.StatusStore.set({ muted: !state.muted });
     hideBtn.onclick = () => window.StatusStore.set({ hidden: !state.hidden });
 
+    // ---- プレビュー（VCam / ステータスカード）----
+    const vcamVideo = document.getElementById("vcam");
+    const pvCard = document.getElementById("pv-card");
+    const pvBadge = document.getElementById("pv-badge");
+    const pvLabel = document.getElementById("pv-label");
+    const pvMsg = document.getElementById("pv-msg");
+    const pvMute = document.getElementById("pv-mute");
+    const pvCaption = document.getElementById("pv-caption");
+    let vcamStream = null;
+
+    async function startVcam() {
+      if (vcamStream) return;
+      try {
+        let stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const devs = await navigator.mediaDevices.enumerateDevices();
+        const vc = devs.find((d) => d.kind === "videoinput" && /vcam/i.test(d.label));
+        if (vc) {
+          stream.getTracks().forEach((t) => t.stop());
+          stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: vc.deviceId } } });
+        }
+        vcamStream = stream; vcamVideo.srcObject = stream;
+        pvCaption.textContent = vc ? "操作側 VCam の実映像を表示中。" : "VCam が見つからず既定カメラを表示中（VCam を起動してください）。";
+      } catch (e) {
+        pvCaption.textContent = "カメラを表示できません（このページにカメラ権限を許可してください）。";
+      }
+    }
+    function stopVcam() {
+      if (vcamStream) { vcamStream.getTracks().forEach((t) => t.stop()); vcamStream = null; vcamVideo.srcObject = null; }
+    }
+
+    function renderPreview() {
+      const def = window.STATUS_DEFS[state.status] || window.STATUS_DEFS.away;
+      if (def.showMeeting && !state.hidden) {
+        startVcam();
+        vcamVideo.style.display = "block"; pvCard.style.display = "none";
+        pvMute.style.display = state.muted ? "flex" : "none";
+      } else {
+        stopVcam();
+        vcamVideo.style.display = "none"; pvCard.style.display = "flex"; pvMute.style.display = "none";
+        if (def.showMeeting && state.hidden) {
+          pvBadge.style.color = "#607d8b"; pvLabel.textContent = "アバター非表示中"; pvMsg.textContent = "通話は維持したまま姿を隠しています";
+        } else {
+          pvBadge.style.color = def.color; pvLabel.textContent = def.label; pvMsg.textContent = def.message;
+        }
+      }
+    }
+
     window.StatusStore.subscribe((s) => {
       state = s;
       const def = window.STATUS_DEFS[s.status] || window.STATUS_DEFS.away;
-      currentLabel.textContent = def.label
-        + (s.muted ? "・ミュート中" : "")
-        + (s.hidden ? "・非表示中" : "");
+      currentLabel.textContent = def.label + (s.muted ? "・ミュート中" : "") + (s.hidden ? "・非表示中" : "");
       Object.entries(btns).forEach(([k, b]) => b.classList.toggle("active", k === s.status));
-
       muteBtn.classList.toggle("on", s.muted);
       muteBtn.querySelector("small").textContent = s.muted ? "ON（音声調整中を表示）" : "OFF";
       hideBtn.classList.toggle("on", s.hidden);
       hideBtn.classList.toggle("hide-on", s.hidden);
       hideBtn.querySelector("small").textContent = s.hidden ? "ON（姿を隠す）" : "OFF";
+      renderPreview();
     });
 
-    // プレビューiframe(1280x800)を枠内に収まるよう縮小・中央配置
-    const preview = document.getElementById("preview");
-    function fitPreview() {
-      const box = preview.parentElement;
-      const scale = Math.min(box.clientWidth / 1280, box.clientHeight / 800);
-      preview.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+    // ---- 接続承認パネル ----
+    const connList = document.getElementById("conn-list");
+    const pendingBadge = document.getElementById("pending-badge");
+    const STLABEL = { pending: "承認待ち", approved: "承認済み", rejected: "拒否" };
+
+    function renderConns(map) {
+      const ids = Object.keys(map || {});
+      const rank = { pending: 0, approved: 1, rejected: 2 };
+      ids.sort((a, b) => {
+        const ra = rank[map[a].approval] ?? 3, rb = rank[map[b].approval] ?? 3;
+        if (ra !== rb) return ra - rb;
+        return (map[b].lastSeen || 0) - (map[a].lastSeen || 0);
+      });
+      const pending = ids.filter((id) => map[id].approval === "pending").length;
+      pendingBadge.style.display = pending ? "inline-block" : "none";
+      pendingBadge.textContent = pending;
+
+      if (!ids.length) { connList.innerHTML = '<div class="empty">接続中の端末はありません</div>'; return; }
+      connList.innerHTML = "";
+      ids.forEach((id) => {
+        const r = map[id];
+        const row = document.createElement("div");
+        row.className = "conn-row" + (r.approval === "pending" ? " pending" : "");
+        row.innerHTML = `
+          <input class="name" value="${(r.name || "").replace(/"/g, "&quot;")}" placeholder="端末名を入力" />
+          <span class="st ${r.approval}">${STLABEL[r.approval] || r.approval}</span>
+          <label class="perm"><input type="checkbox" class="permchk" ${r.permanent ? "checked" : ""}/>永続</label>
+          <button class="btn-ok">承認</button>
+          <button class="btn-no">拒否</button>
+          <button class="btn-del">削除</button>
+          <span class="id">${id}</span>`;
+        row.querySelector(".name").onchange = (e) => window.ConnStore.update(id, { name: e.target.value });
+        row.querySelector(".permchk").onchange = (e) => window.ConnStore.update(id, { permanent: e.target.checked, approval: e.target.checked ? "approved" : "pending" });
+        row.querySelector(".btn-ok").onclick = () => window.ConnStore.update(id, { approval: "approved" });
+        row.querySelector(".btn-no").onclick = () => window.ConnStore.update(id, { approval: "rejected", permanent: false });
+        row.querySelector(".btn-del").onclick = () => window.ConnStore.remove(id);
+        connList.appendChild(row);
+      });
     }
-    window.addEventListener("resize", fitPreview);
-    fitPreview();
+    window.ConnStore.onAll(renderConns);
   </script>
 </body>
 </html>
