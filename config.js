@@ -3,10 +3,15 @@
 
 window.AVATAR_CONFIG = {
   // --- Jitsi 会議設定 ---
+  // JaaS（8x8）構成。埋め込み＋モデレーターJWTで「参加待ち」問題を解消。
   jitsi: {
-    domain: "meet.jit.si",          // Jitsi サーバー（無料公開サーバー）
-    room: "yamada-avatar-desk-01",  // 会議ルーム名（推測されにくい固有名にする）
-    displayName: "山田（ネットワークエンジニア）", // 客先側に見える名前
+    domain: "8x8.vc",
+    appId: "vpaas-magic-cookie-3a518f0ee8eb425ca08cd293ecd138da",
+    kid: "vpaas-magic-cookie-3a518f0ee8eb425ca08cd293ecd138da/29a467",
+    room: "yamada-avatar-desk-01",  // 実際の会議名は `${appId}/${room}` になる
+    displayName: "山田（ネットワークエンジニア）",
+    // JWT を発行する Cloudflare Worker の URL
+    tokenEndpoint: "https://jaas-token.masaki030815.workers.dev/token",
   },
 
   // --- ステータス同期方式 ---

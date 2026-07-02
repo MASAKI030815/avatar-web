@@ -80,7 +80,7 @@
   <div id="mute-indicator">🔇 音声調整中</div>
 
   <!-- Jitsi IFrame API（参加/離脱をプログラム制御し、ネイティブの参加ボタンを出さない） -->
-  <script src="https://meet.jit.si/external_api.js"></script>
+  <script src="https://8x8.vc/vpaas-magic-cookie-3a518f0ee8eb425ca08cd293ecd138da/external_api.js"></script>
   <!-- Firebase（同期・承認用） -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -121,26 +121,34 @@
         if (op) jitsiApi.setLargeVideoParticipant(op.participantId);
       } catch (e) {}
     }
-    function ensureMeeting() {
-      if (jitsiApi) return;
-      jitsiApi = new JitsiMeetExternalAPI(cfg.jitsi.domain, {
-        roomName: cfg.jitsi.room,
-        parentNode: meetingEl,
-        userInfo: { displayName: cfg.jitsi.displayName || "" },
-        configOverwrite: {
-          prejoinPageEnabled: false,
-          prejoinConfig: { enabled: false },   // 新しい Jitsi ではこちらで参加画面を無効化
-          disableDeepLinking: true,
-          disableInviteFunctions: true,
-          startWithVideoMuted: false,
-          filmstrip: { disabled: true },   // サムネイル非表示（監視参加を目立たせない）
-        },
-        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: [] },
-      });
-      // 操作側（アバター）を常に主表示に固定
-      jitsiApi.addEventListener("videoConferenceJoined", pinOperator);
-      jitsiApi.addEventListener("participantJoined", pinOperator);
-      jitsiApi.addEventListener("dominantSpeakerChanged", pinOperator);
+    let meetingStarting = false;
+    async function ensureMeeting() {
+      if (jitsiApi || meetingStarting) return;
+      meetingStarting = true;
+      try {
+        const jwt = await window.getJaasToken({ id: deviceId, name: (conn && conn.name) || defaultName });
+        jitsiApi = new JitsiMeetExternalAPI("8x8.vc", {
+          roomName: window.jaasRoomName(),
+          jwt: jwt,
+          parentNode: meetingEl,
+          configOverwrite: {
+            prejoinPageEnabled: false,
+            prejoinConfig: { enabled: false },
+            disableDeepLinking: true,
+            disableInviteFunctions: true,
+            startWithVideoMuted: false,
+            filmstrip: { disabled: true },   // サムネイル非表示（監視参加を目立たせない）
+          },
+          interfaceConfigOverwrite: { TOOLBAR_BUTTONS: [] },
+        });
+        // 操作側（アバター）を常に主表示に固定
+        jitsiApi.addEventListener("videoConferenceJoined", pinOperator);
+        jitsiApi.addEventListener("participantJoined", pinOperator);
+        jitsiApi.addEventListener("dominantSpeakerChanged", pinOperator);
+      } catch (e) {
+        jitsiApi = null;
+      }
+      meetingStarting = false;
     }
     function disposeMeeting() {
       if (jitsiApi) { try { jitsiApi.dispose(); } catch (e) {} jitsiApi = null; meetingEl.innerHTML = ""; }

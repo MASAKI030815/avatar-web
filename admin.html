@@ -139,7 +139,7 @@
     </div>
   </div>
 
-  <script src="https://meet.jit.si/external_api.js"></script>
+  <script src="https://8x8.vc/vpaas-magic-cookie-3a518f0ee8eb425ca08cd293ecd138da/external_api.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="config.js"></script>
@@ -210,25 +210,33 @@
         if (cust) monitorApi.setLargeVideoParticipant(cust.participantId);
       } catch (e) {}
     }
-    function startMonitor() {
-      if (monitorApi) return;
+    let monitorStarting = false;
+    async function startMonitor() {
+      if (monitorApi || monitorStarting) return;
+      monitorStarting = true;
       monIdle.style.display = "none";
-      monitorApi = new JitsiMeetExternalAPI(cfg.jitsi.domain, {
-        roomName: cfg.jitsi.room,
-        parentNode: monitorEl,
-        userInfo: { displayName: "（監視）" },
-        configOverwrite: {
-          prejoinPageEnabled: false,
-          prejoinConfig: { enabled: false },
-          startSilent: true,          // 音声の送受信なし（エコー防止）
-          startWithVideoMuted: true,  // カメラ送信なし
-          disableDeepLinking: true,
-          filmstrip: { disabled: true },
-        },
-        interfaceConfigOverwrite: { TOOLBAR_BUTTONS: [] },
-      });
-      monitorApi.addEventListener("videoConferenceJoined", pinCustomer);
-      monitorApi.addEventListener("participantJoined", pinCustomer);
+      try {
+        const jwt = await window.getJaasToken({ id: "monitor", name: "（監視）" });
+        monitorApi = new JitsiMeetExternalAPI("8x8.vc", {
+          roomName: window.jaasRoomName(),
+          jwt: jwt,
+          parentNode: monitorEl,
+          configOverwrite: {
+            prejoinPageEnabled: false,
+            prejoinConfig: { enabled: false },
+            startSilent: true,          // 音声の送受信なし（エコー防止）
+            startWithVideoMuted: true,  // カメラ送信なし
+            disableDeepLinking: true,
+            filmstrip: { disabled: true },
+          },
+          interfaceConfigOverwrite: { TOOLBAR_BUTTONS: [] },
+        });
+        monitorApi.addEventListener("videoConferenceJoined", pinCustomer);
+        monitorApi.addEventListener("participantJoined", pinCustomer);
+      } catch (e) {
+        monitorApi = null; monIdle.textContent = "モニターに接続できませんでした"; monIdle.style.display = "flex";
+      }
+      monitorStarting = false;
     }
     function stopMonitor() {
       if (monitorApi) { try { monitorApi.dispose(); } catch (e) {} monitorApi = null; monitorEl.innerHTML = ""; monIdle.style.display = "flex"; }

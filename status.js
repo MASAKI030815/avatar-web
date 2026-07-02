@@ -180,3 +180,22 @@ window.CONN_DEFAULT = { name: "", approval: "pending", permanent: false };
 
   window.ConnStore = useFirebase ? connFirebase() : connLocal();
 })();
+
+// ---------- JaaS JWT ヘルパー ----------
+// Cloudflare Worker から参加用トークンを取得する。
+window.jaasRoomName = function () {
+  const j = window.AVATAR_CONFIG.jitsi;
+  return j.appId + "/" + j.room;
+};
+window.getJaasToken = async function (opts) {
+  opts = opts || {};
+  const j = window.AVATAR_CONFIG.jitsi;
+  const p = new URLSearchParams();
+  if (opts.name) p.set("name", opts.name);
+  if (opts.id) p.set("id", opts.id);
+  if (opts.moderator) { p.set("moderator", "true"); if (opts.key) p.set("key", opts.key); }
+  const res = await fetch(j.tokenEndpoint + "?" + p.toString());
+  const data = await res.json();
+  if (!data.jwt) throw new Error(data.error || "token error");
+  return data.jwt;
+};

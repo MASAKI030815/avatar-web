@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>操作側（アバター参加）</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0d1b2a; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
+    #meet { position: absolute; inset: 0; }
+    #meet iframe { width: 100%; height: 100%; border: 0; }
+
+    #setup {
+      position: absolute; inset: 0; z-index: 10; display: flex;
+      flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      color: #fff; text-align: center; padding: 8vw;
+      background: radial-gradient(circle at 50% 30%, #1b4a80 0%, #0d1b2a 72%);
+    }
+    #setup h1 { font-size: 22px; }
+    #setup p { font-size: 14px; opacity: 0.85; max-width: 26em; line-height: 1.7; }
+    #setup input { width: min(360px, 80vw); padding: 12px 14px; border-radius: 10px; border: 0; font-size: 16px; }
+    #setup button { padding: 12px 28px; border-radius: 10px; border: 0; background: #2f80d6; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+    #err { color: #ffb4b4; font-size: 13px; min-height: 1em; }
+    #topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 5; display: none; justify-content: space-between; align-items: center; padding: 6px 12px; color: #cfe0f0; font-size: 12px; background: rgba(13,27,42,0.6); }
+    #topbar button { background: transparent; border: 1px solid #5a7a99; color: #cfe0f0; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <span>操作側（アバター参加・モデレーター）　※カメラを「VCam」に選択してください</span>
+    <button id="change-key">合言葉を変更</button>
+  </div>
+  <div id="meet"></div>
+
+  <div id="setup">
+    <h1>操作側 アバター参加</h1>
+    <p>モデレーター用の合言葉（Cloudflare に設定した <b>OPERATOR_KEY</b>）を入力してください。会議を開始し、あなたがアバターとして参加します。</p>
+    <input id="key" type="password" placeholder="合言葉（OPERATOR_KEY）" />
+    <button id="connect">接続する</button>
+    <div id="err"></div>
+    <p style="opacity:0.6;font-size:12px">接続後、Jitsi のツールバーからカメラを <b>VCam</b> に選択してください（VCam アプリを起動しておくこと）。</p>
+  </div>
+
+  <script src="https://8x8.vc/vpaas-magic-cookie-3a518f0ee8eb425ca08cd293ecd138da/external_api.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="config.js"></script>
+  <script src="status.js"></script>
+  <script>
+    const cfg = window.AVATAR_CONFIG;
+    const setup = document.getElementById("setup");
+    const topbar = document.getElementById("topbar");
+    const meetEl = document.getElementById("meet");
+    const keyInput = document.getElementById("key");
+    const err = document.getElementById("err");
+    let api = null;
+
+    function jwtPayload(jwt) {
+      let p = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      p += "=".repeat((-p.length % 4 + 4) % 4);
+      return JSON.parse(atob(p));
+    }
+
+    async function startOperator(key) {
+      err.textContent = "接続中…";
+      try {
+        const jwt = await window.getJaasToken({ moderator: true, key: key, id: "operator", name: cfg.jitsi.displayName });
+        const payload = jwtPayload(jwt);
+        if (!payload.context || payload.context.user.moderator !== "true") {
+          err.textContent = "合言葉が違います。もう一度入力してください。";
+          localStorage.removeItem("avatar-operator-key");
+          return;
+        }
+        localStorage.setItem("avatar-operator-key", key);
+        setup.style.display = "none";
+        topbar.style.display = "flex";
+        api = new JitsiMeetExternalAPI("8x8.vc", {
+          roomName: window.jaasRoomName(),
+          jwt: jwt,
+          parentNode: meetEl,
+          configOverwrite: {
+            prejoinPageEnabled: false,
+            prejoinConfig: { enabled: false },
+            disableDeepLinking: true,
+            startWithVideoMuted: false,
+          },
+        });
+      } catch (e) {
+        err.textContent = "接続に失敗しました：" + (e.message || e);
+      }
+    }
+
+    document.getElementById("connect").onclick = () => {
+      const k = keyInput.value.trim();
+      if (k) startOperator(k);
+    };
+    keyInput.addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("connect").click(); });
+    document.getElementById("change-key").onclick = () => {
+      localStorage.removeItem("avatar-operator-key");
+      if (api) { try { api.dispose(); } catch (e) {} api = null; meetEl.innerHTML = ""; }
+      topbar.style.display = "none"; setup.style.display = "flex"; keyInput.value = ""; err.textContent = "";
+    };
+
+    // 保存済みの合言葉があれば自動接続
+    const saved = localStorage.getItem("avatar-operator-key");
+    if (saved) startOperator(saved);
+  </script>
+</body>
+</html>
